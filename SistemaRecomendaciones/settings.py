@@ -26,6 +26,7 @@ SECRET_KEY = 'django-insecure-z#tm3_2=mg=^)80&kc_&#+m7zkhm-sf&41g4r$7sv6m9_$4_1!
 DEBUG = True
 
 ALLOWED_HOSTS = []
+AUTH_USER_MODEL = 'WantMusic_infraestructura.Usuario'
 
 
 # Application definition
@@ -36,14 +37,21 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
+    'rest_framework',
+    'corsheaders',
     'Backend.AdministratorWant.infraestructura.apps.AdministratorWantInfraestructuraConfig',
     'Backend.TagWant.infraestructura.apps.TagWantInfraestructuraConfig',
     'Backend.WantAdministrator.infraestructura.apps.WantAdministratorInfraestructuraConfig',
     'Backend.WantMusic.infraestructura.apps.WantMusicInfraestructuraConfig',
 ]
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
+
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

@@ -1,0 +1,2 @@
+Contextos de React para manejo de estados globales (como autenticación, usuario, tema, etc.).
+

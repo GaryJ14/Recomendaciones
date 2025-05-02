@@ -1,0 +1,2 @@
+Componentes que representan las páginas principales de la app (normalmente mapeadas con rutas).
+

@@ -1,0 +1,2 @@
+Funciones que hacen peticiones HTTP a tu backend Django (usando axios, fetch, etc.).
+

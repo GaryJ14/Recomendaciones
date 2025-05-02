@@ -1,0 +1,2 @@
+Recursos como imágenes, fuentes o archivos estáticos que necesitas importar en los componentes.
+
