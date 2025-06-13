@@ -1,8 +1,18 @@
-import React, { useState } from 'react';
-import { Box, Button, Card as MuiCard, CssBaseline, FormControl, FormLabel, Stack, TextField, Typography } from '@mui/material';
+import React from 'react';
+import {
+  Box,
+  Button,
+  Card as MuiCard,
+  CssBaseline,
+  FormControl,
+  FormLabel,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { styled } from '@mui/material/styles';
 import Swal from 'sweetalert2';
-import { register } from '../services/api';
+import { register } from '../services/api';  
 import AppTheme from '../components/shared-theme/AppTheme';
 import ColorModeSelect from '../components/shared-theme/ColorModeSelect';
 import { SitemarkIcon } from '../components/Registro/CustomIcons';
@@ -31,27 +41,24 @@ const SignUpContainer = styled(Stack)(({ theme }) => ({
 }));
 
 export default function SignUp(props) {
-  const [emailError, setEmailError] = useState(false);
-  const [emailErrorMessage, setEmailErrorMessage] = useState('');
-  const [passwordError, setPasswordError] = useState(false);
-  const [passwordErrorMessage, setPasswordErrorMessage] = useState('');
-  const [nameError, setNameError] = useState(false);
-  const [nameErrorMessage, setNameErrorMessage] = useState('');
+  const [emailError, setEmailError] = React.useState(false);
+  const [emailErrorMessage, setEmailErrorMessage] = React.useState('');
+  const [passwordError, setPasswordError] = React.useState(false);
+  const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('');
+  const [nameError, setNameError] = React.useState(false);
+  const [nameErrorMessage, setNameErrorMessage] = React.useState('');
 
-  // Estado para los campos
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [name, setName] = React.useState('');
 
   const validateInputs = () => {
     let isValid = true;
-
-    // Expresión regular para el correo
     const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
     if (!email || !emailRegex.test(email)) {
       setEmailError(true);
-      setEmailErrorMessage('Por favor ingrese una direccion de correo electronico valido.');
+      setEmailErrorMessage('Por favor ingrese una dirección de correo electrónico válida.');
       isValid = false;
     } else {
       setEmailError(false);
@@ -81,7 +88,6 @@ export default function SignUp(props) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
     if (!validateInputs()) return;
 
     const payload = {
@@ -91,27 +97,21 @@ export default function SignUp(props) {
     };
 
     try {
-      const response = await register(payload);
+      const data = await register(payload);
+      localStorage.setItem('nombre', data.nombre || name);
+      localStorage.setItem('access_token', data.access_token);
       Swal.fire({
         icon: 'success',
         title: 'Registro exitoso',
-        text: response.data.mensaje,
-        
-      }); window.location.href = '/Index'; // Redirigir a la página inicial
+        text: `Bienvenido, ${data.nombre || name}!`,
+      });
+      window.location.href = '/GustosPage';
     } catch (error) {
-      if (error.response?.data?.error) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Registro fallido',
-          text: error.response.data.error,
-        });
-      } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error de red',
-          text: 'No se pudo conectar con el servidor.',
-        });
-      }
+      Swal.fire({
+        icon: 'error',
+        title: 'Registro fallido',
+        text: error.message || 'Error desconocido',
+      });
     }
   };
 
@@ -122,11 +122,7 @@ export default function SignUp(props) {
       <SignUpContainer direction="column" justifyContent="space-between">
         <Card variant="outlined">
           <SitemarkIcon />
-          <Typography
-            component="h1"
-            variant="h4"
-            sx={{ width: '100%', fontSize: 'clamp(2rem, 10vw, 2.15rem)' }}
-          >
+          <Typography component="h1" variant="h4" sx={{ width: '100%', fontSize: 'clamp(2rem, 10vw, 2.15rem)' }}>
             Registro
           </Typography>
           <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -152,7 +148,7 @@ export default function SignUp(props) {
                 required
                 fullWidth
                 id="email"
-                placeholder="your@email.com"
+                placeholder="tu@email.com"
                 name="email"
                 autoComplete="email"
                 variant="outlined"

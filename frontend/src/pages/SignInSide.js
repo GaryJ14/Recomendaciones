@@ -57,7 +57,9 @@ export default function SignInSide(props) {
               m: 'auto',
             }}
           >
+            
             <Content />
+            
             <SignInCard />
           </Stack>
         </Stack>

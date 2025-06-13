@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -26,7 +27,7 @@ SECRET_KEY = 'django-insecure-z#tm3_2=mg=^)80&kc_&#+m7zkhm-sf&41g4r$7sv6m9_$4_1!
 DEBUG = True
 
 ALLOWED_HOSTS = []
-AUTH_USER_MODEL = 'WantMusic_infraestructura.Usuario'
+AUTH_USER_MODEL = 'WantMusic.Usuario'
 
 
 # Application definition
@@ -38,13 +39,36 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt',
     'corsheaders',
     'Backend.AdministratorWant.infraestructura.apps.AdministratorWantInfraestructuraConfig',
     'Backend.TagWant.infraestructura.apps.TagWantInfraestructuraConfig',
     'Backend.WantAdministrator.infraestructura.apps.WantAdministratorInfraestructuraConfig',
     'Backend.WantMusic.infraestructura.apps.WantMusicInfraestructuraConfig',
 ]
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',  # Usar JWT para autenticación
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',  # Requiere que el usuario esté autenticado
+    ],
+}
 
+# Definir una expiración para el token
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # Tiempo de expiración del token
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),  # Tiempo de expiración del token de refresco
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+}
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
 ]
@@ -60,6 +84,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
 
 ROOT_URLCONF = 'SistemaRecomendaciones.urls'
 
@@ -138,3 +163,5 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'

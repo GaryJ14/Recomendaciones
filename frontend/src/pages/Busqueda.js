@@ -1,0 +1,55 @@
+import React, { useState } from 'react';
+import Sidebar from '../components/Home/Sidebar';  
+import Header from '../components/Home/Header'; 
+import BusquedaApp from '../components/Busqueda/BusquedaApp';
+
+const BusquedaPage = () => {
+  const [searchResults, setSearchResults] = useState([]);  // Para almacenar los resultados de búsqueda
+
+  // Esta función maneja los resultados y actualiza el estado de búsqueda
+  const setSearchResultsHandler = (results) => {
+    setSearchResults(results);  // Establece los resultados de la búsqueda
+  };
+
+  return (
+    <div style={styles.appContainer}>
+      {/* Sidebar a la izquierda */}
+      <Sidebar />
+
+      {/* Contenido principal */}
+      <div style={styles.mainContent}>
+        <Header setSearchResults={setSearchResultsHandler} />
+
+        {/* Contenido de la búsqueda */}
+        <div style={styles.bodyContent}>
+          <h1>Búsqueda de Contenidos</h1>
+          <BusquedaApp searchResults={searchResults} />  {/* Pasa los resultados de la búsqueda */}
+        </div>
+      </div>
+
+    </div>
+  );
+};
+
+// Estilos del componente, similar a los de SpotifyApp
+const styles = {
+  appContainer: {
+    display: 'flex',
+    height: '100vh',
+    backgroundColor: '#121212', // Fondo oscuro para la aplicación
+    color: '#fff',  // Color blanco para el texto
+  },
+  mainContent: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+  },
+  bodyContent: {
+    flex: 1,
+    overflowY: 'auto',
+    padding: '20px',
+  },
+};
+
+export default BusquedaPage;

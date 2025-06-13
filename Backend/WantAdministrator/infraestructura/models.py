@@ -1,23 +1,13 @@
 from django.db import models
-
-class Administrador(models.Model):
-    nombre = models.CharField(max_length=100)
-    correo = models.EmailField(unique=True)
-    contrasena = models.CharField(max_length=255)
-
-    def __str__(self):
-        return self.nombre
-
-
-class UsuarioInactivo(models.Model):
-    usuario = models.ForeignKey('WantMusic_infraestructura.Usuario', on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f"Usuario Inactivo: {self.usuario.nombre}"
+from Backend.WantMusic.infraestructura.models import Usuario, Contenido
 
 
 class ContenidoEliminado(models.Model):
-    contenido = models.ForeignKey('WantMusic_infraestructura.Contenido', on_delete=models.CASCADE)
+    contenido = models.ForeignKey(Contenido, on_delete=models.CASCADE)
+    fecha_eliminacion = models.DateTimeField(auto_now_add=True)
+    motivo = models.TextField(blank=True, null=True)
+    eliminado_por = models.ForeignKey(Usuario, null=True, blank=True, on_delete=models.SET_NULL)
+
 
     def __str__(self):
-        return f"Contenido Eliminado: {self.contenido.titulo}"
+        return f"Eliminado: {self.contenido.titulo} en {self.fecha_eliminacion.strftime('%Y-%m-%d %H:%M')}"

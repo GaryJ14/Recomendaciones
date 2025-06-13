@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 
+
 class GestorUsuario(BaseUserManager):
     def create_user(self, email, nombre, password=None, **extra_fields):
         if not email:
@@ -27,7 +28,7 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
 
     objects = GestorUsuario()
 
-    USERNAME_FIELD = 'email'  # Se loguea usando el correo electrónico
+    USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['nombre']
 
     def __str__(self):
@@ -43,16 +44,48 @@ class Contenido(models.Model):
     titulo = models.CharField(max_length=255)
     tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
     url = models.URLField(max_length=500)
-    etiquetas = models.TextField()
     fecha_subida = models.DateTimeField(auto_now_add=True)
     subido_por = models.ForeignKey(
-        Usuario,
+        'Usuario',
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
         related_name='contenidos_subidos'
     )
 
+    # Eliminación lógica simple
+    eliminado = models.BooleanField(default=False)
+
     def __str__(self):
         return self.titulo
 
+
+class Favorito(models.Model):
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='favoritos')
+    contenido = models.ForeignKey(Contenido, on_delete=models.CASCADE, related_name='favoritos')
+    fecha_favorito = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('usuario', 'contenido')
+
+
+class HistorialReproduccion(models.Model):
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='historial_reproduccion')
+    contenido = models.ForeignKey(Contenido, on_delete=models.CASCADE, related_name='historial_reproduccion')
+    fecha_reproduccion = models.DateTimeField(auto_now_add=True)
+    duracion_visto = models.PositiveIntegerField(null=True, blank=True)
+
+class UsuarioEtiquetaFavorita(models.Model):
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='etiquetas_favoritas')
+    etiqueta = models.ForeignKey('TagWant.Etiqueta', on_delete=models.CASCADE, related_name='usuarios_que_la_prefieren')
+
+    class Meta:
+        unique_together = ('usuario', 'etiqueta')
+
+class HistorialBusqueda(models.Model):
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name="historial_busquedas")
+    termino_busqueda = models.CharField(max_length=255)  # Aquí guardas el término de búsqueda
+    fecha_busqueda = models.DateTimeField(auto_now_add=True)  # Guarda la fecha de la búsqueda
+
+    def __str__(self):
+        return f"Busqueda: {self.termino_busqueda} por {self.usuario.email}"

@@ -1,43 +1,43 @@
-import * as React from 'react';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import MuiCard from '@mui/material/Card';
-import Checkbox from '@mui/material/Checkbox';
-import FormLabel from '@mui/material/FormLabel';
-import FormControl from '@mui/material/FormControl';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Link from '@mui/material/Link';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import { styled } from '@mui/material/styles';
-import ForgotPassword from './ForgotPassword';
-import { SitemarkIcon } from './CustomIcons';
-import { login } from '../../services/api';
-import Swal from 'sweetalert2'; 
+import * as React from "react";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import MuiCard from "@mui/material/Card";
+import Checkbox from "@mui/material/Checkbox";
+import FormLabel from "@mui/material/FormLabel";
+import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Link from "@mui/material/Link";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { styled } from "@mui/material/styles";
+import ForgotPassword from "./ForgotPassword";
+import { SitemarkIcon } from "./CustomIcons";
+import { login } from "../../services/api";
+import Swal from "sweetalert2";
 
 const Card = styled(MuiCard)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  alignSelf: 'center',
-  width: '100%',
+  display: "flex",
+  flexDirection: "column",
+  alignSelf: "center",
+  width: "100%",
   padding: theme.spacing(4),
   gap: theme.spacing(2),
   boxShadow:
-    'hsla(220, 30%, 5%, 0.05) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.05) 0px 15px 35px -5px',
-  [theme.breakpoints.up('sm')]: {
-    width: '450px',
+    "hsla(220, 30%, 5%, 0.05) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.05) 0px 15px 35px -5px",
+  [theme.breakpoints.up("sm")]: {
+    width: "450px",
   },
-  ...theme.applyStyles('dark', {
+  ...theme.applyStyles("dark", {
     boxShadow:
-      'hsla(220, 30%, 5%, 0.5) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.08) 0px 15px 35px -5px',
+      "hsla(220, 30%, 5%, 0.5) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.08) 0px 15px 35px -5px",
   }),
 }));
 
 export default function SignInCard() {
-  const [emailError, setEmailError] = React.useState(false);
-  const [emailErrorMessage, setEmailErrorMessage] = React.useState('');
-  const [passwordError, setPasswordError] = React.useState(false);
-  const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('');
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [emailError, setEmailError] = React.useState("");
+  const [passwordError, setPasswordError] = React.useState("");
   const [open, setOpen] = React.useState(false);
 
   const handleClickOpen = () => {
@@ -53,61 +53,54 @@ export default function SignInCard() {
 
     if (!validateInputs()) return;
 
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-
     try {
       const data = await login(email, password); // Llamada al servicio login
 
-      // Si la autenticación fue exitosa, redirige
+      // Almacenar el token JWT en localStorage
+      localStorage.setItem("access_token", data.access_token); // Almacenar el token
+      localStorage.setItem("nombre", data.nombre); // Almacenar el nombre del usuario
+      localStorage.setItem("email", data.email); // Almacenar el correo electrónico
+
       Swal.fire({
-        title: 'Bienvenido!',
+        title: "Bienvenido!",
         text: data.mensaje,
-        icon: 'success',
-        confirmButtonText: 'Ok',
+        icon: "success",
+        confirmButtonText: "Ok",
       });
-      window.location.href = '/Index'; // Redirigir a la página principal
-    } catch (error) {
-      if (error.response && error.response.status === 401) {
-        Swal.fire({
-          title: 'Error!',
-          text: 'Usuario o contraseña incorrecta. Por favor intenta de nuevo.',
-          icon: 'error',
-          confirmButtonText: 'Intentar nuevamente',
-        });
+
+      // Redirigir según el rol del usuario
+      if (data.role === "superadmin") {
+        window.location.href = "/Dashboard"; // Redirigir a Dashboard para superadmin
+      } else if (data.role === "admin") {
+        window.location.href = "/Dashboard"; // Redirigir a Dashboard para admin
       } else {
-        Swal.fire({
-          title: 'Error!',
-          text: 'Hubo un error en el servidor. Intenta más tarde.',
-          icon: 'error',
-          confirmButtonText: 'Aceptar',
-        });
+        window.location.href = "/Home"; // Redirigir a la página principal para usuario normal
       }
+    } catch (error) {
+      Swal.fire({
+        title: "Error!",
+        text:
+          error.message || "Hubo un error en el servidor. Intenta más tarde.",
+        icon: "error",
+        confirmButtonText: "Aceptar",
+      });
     }
   };
 
   const validateInputs = () => {
-    const email = document.getElementById('email');
-    const password = document.getElementById('password');
-
     let isValid = true;
-
-    if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
-      setEmailError(true);
-      setEmailErrorMessage('Por favor ingresar el email correcto.');
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+      setEmailError("Por favor ingresar un email correcto.");
       isValid = false;
     } else {
-      setEmailError(false);
-      setEmailErrorMessage('');
+      setEmailError("");
     }
 
-    if (!password.value || password.value.length < 6) {
-      setPasswordError(true);
-      setPasswordErrorMessage('Por favor ingresar una contraseña válida.');
+    if (!password || password.length < 6) {
+      setPasswordError("Por favor ingresar una contraseña válida.");
       isValid = false;
     } else {
-      setPasswordError(false);
-      setPasswordErrorMessage('');
+      setPasswordError("");
     }
 
     return isValid;
@@ -115,65 +108,68 @@ export default function SignInCard() {
 
   return (
     <Card variant="outlined">
-      <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
+      <Box sx={{ display: { xs: "flex", md: "none" } }}>
         <SitemarkIcon />
       </Box>
       <Typography
         component="h1"
         variant="h4"
-        sx={{ width: '100%', fontSize: 'clamp(2rem, 10vw, 2.15rem)' }}
+        sx={{ width: "100%", fontSize: "clamp(2rem, 10vw, 2.15rem)" }}
       >
-        Iniciar sesison
+        Iniciar sesión
       </Typography>
       <Box
         component="form"
         onSubmit={handleSubmit}
         noValidate
-        sx={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 2 }}
+        sx={{ display: "flex", flexDirection: "column", width: "100%", gap: 2 }}
       >
         <FormControl>
           <FormLabel htmlFor="email">Correo</FormLabel>
           <TextField
-            error={emailError}
-            helperText={emailErrorMessage}
+            error={Boolean(emailError)}
+            helperText={emailError}
             id="email"
             type="email"
-            name="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             placeholder="your@email.com"
             autoComplete="email"
             autoFocus
             required
             fullWidth
             variant="outlined"
-            color={emailError ? 'error' : 'primary'}
+            color={emailError ? "error" : "primary"}
           />
         </FormControl>
         <FormControl>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between" }}>
             <FormLabel htmlFor="password">Contraseña</FormLabel>
             <Link
               component="button"
               type="button"
               onClick={handleClickOpen}
               variant="body2"
-              sx={{ alignSelf: 'baseline' }}
+              sx={{ alignSelf: "baseline" }}
             >
               Olvidaste la contraseña?
             </Link>
           </Box>
           <TextField
-            error={passwordError}
-            helperText={passwordErrorMessage}
+            error={Boolean(passwordError)}
+            helperText={passwordError}
             name="password"
             placeholder="••••••"
             type="password"
             id="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
             autoFocus
             required
             fullWidth
             variant="outlined"
-            color={passwordError ? 'error' : 'primary'}
+            color={passwordError ? "error" : "primary"}
           />
         </FormControl>
         <FormControlLabel
@@ -184,15 +180,11 @@ export default function SignInCard() {
         <Button type="submit" fullWidth variant="contained">
           Iniciar sesión
         </Button>
-        <Typography sx={{ textAlign: 'center' }}>
-          No tienes una cuenta?{' '}
+        <Typography sx={{ textAlign: "center" }}>
+          No tienes una cuenta?{" "}
           <span>
-            <Link
-              href="/SignUp"
-              variant="body2"
-              sx={{ alignSelf: 'center' }}
-            >
-              Registrate
+            <Link href="/SignUp" variant="body2" sx={{ alignSelf: "center" }}>
+              Regístrate
             </Link>
           </span>
         </Typography>
