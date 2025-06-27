@@ -32,12 +32,16 @@ const styles = {
     height: '100vh',
     backgroundColor: '#121212',
     color: '#fff',
+    backgroundImage: 'radial-gradient(at 50% 50%, hsla(210, 100%, 16%, 0.5), hsl(220, 30%, 5%))', // Fondo actualizado
+    
   },
   mainContent: {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
+    backgroundImage: 'radial-gradient(at 50% 50%, hsla(210, 100%, 16%, 0.5), hsl(220, 30%, 5%))', // Fondo actualizado
+    
   },
   bodyContent: {
     flex: 1,

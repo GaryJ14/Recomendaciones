@@ -3,6 +3,7 @@ import { FaHeart, FaRegHeart } from 'react-icons/fa';  // Para los íconos de fa
 import { useSearch } from '../../context/SearchContext';  // Usamos el hook del contexto
 import axios from 'axios';  // Asegúrate de importar axios
 import Swal from 'sweetalert2';  // Importamos SweetAlert2 para las alertas
+import { obtenerFavoritos } from '../../services/ContenidoApi';  // Importa la función para obtener favoritos
 
 const Buscar = ({ onSelectSong }) => {  
   const { searchResults } = useSearch();  // Consumimos los resultados desde el contexto
@@ -54,10 +55,26 @@ const Buscar = ({ onSelectSong }) => {
   };
 
   // Verifica si un contenido ya está en los favoritos
-  const isFavorito = (contenidoId) => favoritos.some(fav => fav.id === contenidoId);
-
+  const isFavorito = (contenidoId) => {
+    return favoritos.some(fav => fav.id === contenidoId);
+  };
   // Usamos useEffect para obtener los contenidos recomendados al inicio
+  
   useEffect(() => {
+    const fetchFavoritos = async () => {
+      try {
+        const response = await obtenerFavoritos();  // Llamamos a la API para obtener los favoritos
+        setFavoritos(response);  // Actualizamos el estado con los contenidos favoritos
+      } catch (error) {
+        console.error('Error al obtener los favoritos', error);
+      }
+    };
+
+    fetchFavoritos();
+  }, []);
+
+  useEffect(() => {
+    
     const fetchContenidosRecomendados = async () => {
       setLoading(true);  // Activar estado de carga
       try {
@@ -97,6 +114,7 @@ const Buscar = ({ onSelectSong }) => {
             <span style={{ width: 40 }}>#</span>
             <span style={{ flex: 3 }}>TÍTULO</span>
             <span style={{ flex: 2 }}>TIPO</span>
+            <span style={{ flex: 2 }}>ARTISTA</span>  {/* Mostrar artista */}
             <span style={{ width: 40, textAlign: 'center' }}>❤️</span>
           </div>
 
@@ -120,7 +138,7 @@ const Buscar = ({ onSelectSong }) => {
                 </div>
               </div>
               <span style={{ flex: 2 }}>{resultado.tipo}</span>
-
+              <span style={{ flex: 2 }}>{resultado.artista || 'Desconocido'}</span>  {/* Mostrar artista */}
               <span
                 style={{ width: 40, textAlign: 'center' }}
                 onClick={(e) => {
@@ -148,6 +166,7 @@ const Buscar = ({ onSelectSong }) => {
           <span style={{ width: 40 }}>#</span>
           <span style={{ flex: 3 }}>TÍTULO</span>
           <span style={{ flex: 2 }}>TIPO</span>
+          <span style={{ flex: 2 }}>ARTISTA</span>  {/* Mostrar artista en recomendaciones */}
           <span style={{ width: 40, textAlign: 'center' }}>❤️</span>
         </div>
 
@@ -171,7 +190,7 @@ const Buscar = ({ onSelectSong }) => {
               </div>
             </div>
             <span style={{ flex: 2 }}>{contenido.tipo}</span>
-
+            <span style={{ flex: 2 }}>{contenido.artista || 'Desconocido'}</span>  {/* Mostrar artista */}
             <span
               style={{ width: 40, textAlign: 'center' }}
               onClick={(e) => {

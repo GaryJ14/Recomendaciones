@@ -9,12 +9,14 @@ import Dashboard from "./pages/Dashboard";
 import Home from "./pages/Home";
 import Clientes from './pages/Clientes';
 import Musica from './pages/Musica';
+import MusicaEliminada from './pages/MusicaEliminada';
 import Contenido from './pages/Contenido';
 import PrivateRoute from './components/PrivateRoute';
 import GustosPage from './pages/Gustos';
 import BusquedaPage from './pages/Busqueda';
 import FavoritosPage from './pages/Favoritos';
 import HistorialPage from './pages/Historial';
+import PerfilPage from './pages/Perfil';
 import Player from './components/Home/Player';  // Asegúrate de importar el Player
 
 function App() {
@@ -46,6 +48,10 @@ function App() {
               element={<PrivateRoute element={<Contenido />} />}
             />
             <Route
+              path="/MusicaEliminada"
+              element={<PrivateRoute element={<MusicaEliminada />} />}
+            />
+            <Route
               path="/GustosPage"
               element={<PrivateRoute element={<GustosPage />} />}
             />
@@ -65,6 +71,10 @@ function App() {
               path="/HistorialPage"
               element={<PrivateRoute element={<HistorialPage />} />}
             />
+            <Route
+              path="/PerfilPage"
+              element={<PrivateRoute element={<PerfilPage />} />}
+            />
           </Routes>
         </BrowserRouter>
       </SearchProvider>
@@ -75,7 +85,7 @@ function App() {
 const ConditionalPlayer = () => {
   const location = useLocation();
   // Lista de rutas donde el reproductor debe ser visible
-  const playerRoutes = ['/Home', '/BusquedaPage', '/FavoritosPage', '/HistorialPage'];
+  const playerRoutes = ['/Home', '/BusquedaPage', '/FavoritosPage', '/HistorialPage', '/PerfilPage'];
 
   if (playerRoutes.includes(location.pathname)) {
     return <Player />;

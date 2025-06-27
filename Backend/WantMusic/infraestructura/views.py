@@ -13,7 +13,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework_simplejwt.tokens import RefreshToken  # JWT o token
 from rest_framework.permissions import AllowAny  # permitir acceso sin autenticación
 from rest_framework.permissions import IsAuthenticated  # vistas protegidas
-
+from rest_framework.parsers import MultiPartParser, FormParser
 from django.core.files.storage import default_storage
 
 # Adaptadores y servicios
@@ -34,49 +34,56 @@ from Backend.WantMusic.infraestructura.repositorios.wantMusic_adapter import Usu
 usuario_repo = UsuarioRepositorioORM()
 historial_repo = HistorialRepositorioImpl()
 contenido_repo = ContenidoRepositorioImpl()
-servicio = WantMusicServicio(usuario_repo, historial_repo, contenido_repo)
+# Crear una instancia del servicio de registro
+servicio = WantMusicServicio(
+    usuario_repo=UsuarioRepositorioORM(),  # Aquí pasas las instancias de los repositorios
+    historial_repo=HistorialRepositorioImpl(),
+    contenido_repo=ContenidoRepositorioImpl()
+)
+
 
 class RegistroUsuarioView(APIView):
-    permission_classes = [AllowAny]  # Permitir que cualquier usuario pueda registrarse
-
+    permission_classes = [AllowAny] 
     def post(self, request):
-        print("Datos recibidos en el backend:", request.data)  # Para depurar los datos
-
-        # Recibir los datos de la solicitud
         serializer = RegistroSerializer(data=request.data)
-
-        # Validar los datos con el serializer
         if serializer.is_valid():
-            data = serializer.validated_data
-            try:
-                # Crear el usuario usando la lógica original
-                usuario = servicio.registrar_usuario(data['nombre'], data['email'], data['password'])
-
-                # Crear un token JWT para el usuario
-                refresh = RefreshToken.for_user(usuario)
-                access_token = str(refresh.access_token)
-
-                # Retornar el mensaje con el token de acceso
-                return Response({
-                    'mensaje': 'Usuario registrado exitosamente',
-                    'access_token': access_token,  # Token de acceso
-                    'email': usuario.email,  # Información adicional
-                    'nombre': usuario.nombre,
-                }, status=status.HTTP_201_CREATED)
-
-            except Exception as e:
-                mensaje = str(e)
-                if "ya existe" in mensaje.lower():
-                    return Response({"error": "El correo ya está registrado."}, status=status.HTTP_400_BAD_REQUEST)
-                return Response({"error": "Error al registrar usuario."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Si el serializer no es válido, devolver los errores
+            # Si foto_perfil no está presente, simplemente la dejamos como None
+            foto_perfil = request.FILES.get('foto_perfil', None)
+            
+            # Registrar el usuario sin foto_perfil inicialmente
+            usuario = serializer.save(foto_perfil=foto_perfil)
+            
+            # Generar el token
+            refresh = RefreshToken.for_user(usuario)
+            access_token = str(refresh.access_token)
+            
+            return Response({
+                'mensaje': 'Usuario registrado exitosamente',
+                'access_token': access_token,
+                'email': usuario.email,
+                'nombre': usuario.nombre,
+                'foto_perfil': usuario.foto_perfil.url if usuario.foto_perfil else None,
+            })
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ListaUsuariosView(ListAPIView):
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
 
+class ObtenerUsuarioView(APIView):
+    permission_classes = [IsAuthenticated]  # Solo accesible para usuarios autenticados
+
+    def get(self, request):
+        try:
+            # Obtener el usuario autenticado
+            usuario = request.user  # El usuario autenticado ya está disponible en 'request.user'
+
+            # Serializar los datos del usuario
+            serializer = UsuarioSerializer(usuario)
+
+            return Response(serializer.data, status=200)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
 class LoginUsuarioView(APIView):
     permission_classes = [AllowAny]  # Permitir que cualquier usuario pueda acceder
 
@@ -88,6 +95,7 @@ class LoginUsuarioView(APIView):
             return Response({'error': 'Email y contraseña son obligatorios'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
+            # Suponiendo que el método autenticar_usuario es correcto
             usuario = servicio.autenticar_usuario(email, password)
             if usuario:
                 # Generar el token JWT
@@ -96,46 +104,58 @@ class LoginUsuarioView(APIView):
 
                 # Determinar el rol del usuario
                 if usuario.is_superuser:
-                    role = 'superadmin'  # Rol de superadministrador
+                    role = 'superadmin'
                 elif usuario.is_staff:
-                    role = 'admin'  # Rol de administrador
+                    role = 'admin'
                 else:
-                    role = 'usuario'  # Rol de usuario normal
+                    role = 'usuario'
 
-                # Retornar el token JWT y los datos del usuario
+                # Retornar el token JWT y los datos del usuario, incluyendo la foto de perfil
                 return Response({
                     'message': 'Inicio de sesión exitoso',
                     'access_token': access_token,  # Token de acceso
                     'role': role,  # Rol del usuario (superadmin, admin, usuario)
+                    'id': usuario.id,
                     'email': usuario.email,
                     'nombre': usuario.nombre,
+                    'foto_perfil': usuario.foto_perfil if usuario.foto_perfil else None  # Devolver la URL o None si no hay foto
                 }, status=status.HTTP_200_OK)
             else:
-                return Response({'error': 'Haz ingresado el email y/o contraseña incorrecta'}, status=status.HTTP_401_UNAUTHORIZED)
-        except Exception:
-            return Response({'error': 'Error interno del servidor'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
-        
+                return Response({'error': 'Email y/o contraseña incorrectos'}, status=status.HTTP_401_UNAUTHORIZED)
+        except Exception as e:
+            return Response({'error': f'Error interno del servidor: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 class ActualizarUsuarioView(APIView):
     def put(self, request, id):
         serializer = ActualizarUsuarioSerializer(data=request.data)
         if serializer.is_valid():
             datos = serializer.validated_data
             try:
-                usuario_actualizado = servicio.actualizar_usuario(
-                    id=id,
-                    nombre=datos['nombre'],
-                    email=datos['email'],
-                    password=datos.get('password', None),
-                    is_active=datos['is_active'],
-                )
+                # Aquí puedes agregar la lógica para actualizar la contraseña de forma segura
+                usuario = Usuario.objects.get(id=id)
+
+                # Si se pasa una nueva contraseña, la actualizamos
+                if datos.get('password'):
+                    usuario.set_password(datos['password'])  # Encriptación de la contraseña
+
+                # Actualizamos los demás campos (nombre, email, is_active)
+                usuario.nombre = datos['nombre']
+                usuario.email = datos['email']
+
+                # Si se pasa una nueva foto de perfil, la actualizamos
+                if request.FILES.get('foto_perfil'):
+                    usuario.foto_perfil = request.FILES['foto_perfil']
+
+                usuario.save()
+
                 return Response({"mensaje": "Usuario actualizado correctamente"}, status=status.HTTP_200_OK)
+
+            except Usuario.DoesNotExist:
+                return Response({"error": "Usuario no encontrado"}, status=status.HTTP_404_NOT_FOUND)
             except Exception as e:
-                return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
 class EliminarUsuarioView(APIView):
     def delete(self, request, id):
         try:
@@ -143,7 +163,6 @@ class EliminarUsuarioView(APIView):
             return Response({"mensaje": "Usuario eliminado exitosamente"}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
-
 
 class CrearContenidoView(APIView):
     def __init__(self, **kwargs):
@@ -154,42 +173,27 @@ class CrearContenidoView(APIView):
         self.servicio = ContenidoServicio(contenido_repo, etiqueta_repo, relacion_repo)
 
     def post(self, request):
+        # Recibe los datos del formulario, incluyendo 'artista'
         serializer = CrearContenidoSerializer(data=request.data)
         if serializer.is_valid():
             datos = serializer.validated_data
-            datos['subido_por'] = request.user  # Asignar usuario actual
+            datos['subido_por'] = request.user  # Asignar el usuario actual
             archivo = request.FILES.get('archivo')
 
+            # Si el artista está en los datos, se asigna correctamente
+            artista = datos.get('artista', None)
+
+            # Llamada al servicio para crear el contenido
             contenido_creado = self.servicio.crear_contenido_con_etiquetas(datos, archivo)
+
+            # Verifica que el campo 'artista' se esté pasando correctamente
+            print("Artista:", artista)
+
             serializer_resp = ContenidoSerializer(contenido_creado)
             return Response(serializer_resp.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-
-    def _guardar_archivo(self, archivo, tipo):
-        import os
-        import uuid
-        import datetime
-        from django.conf import settings
-        from django.core.files.storage import default_storage
-
-        hoy = datetime.date.today()
-        subcarpeta = f"{hoy.year}/{hoy.month:02d}"
-        ruta_carpeta = os.path.join(settings.MEDIA_ROOT, tipo, subcarpeta)
-        os.makedirs(ruta_carpeta, exist_ok=True)
-
-        nombre_archivo = f"{uuid.uuid4()}_{archivo.name}"
-        ruta_completa = os.path.join(ruta_carpeta, nombre_archivo)
-
-        if not default_storage.exists(ruta_completa):
-            with open(ruta_completa, 'wb+') as destino:
-                for chunk in archivo.chunks():
-                    destino.write(chunk)
-
-        url_relativa = f"{settings.MEDIA_URL}{tipo}/{subcarpeta}/{nombre_archivo}"
-        return url_relativa
 
 class ListarContenidoView(APIView):
     def __init__(self, **kwargs):
@@ -294,6 +298,31 @@ class BuscarContenidoPorEtiquetaView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+# views.py
+
+class BuscarContenidoPorArtistaView(APIView):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Instanciamos el servicio que se encargará de la lógica de la búsqueda
+        contenido_repo = ContenidoRepositorioImpl()
+        etiqueta_repo = EtiquetaRepositorioImpl()
+        relacion_repo = ContenidoEtiquetaRepositorioImpl()
+        self.servicio = ContenidoServicio(contenido_repo, etiqueta_repo, relacion_repo)
+
+    def get(self, request, artista):
+        # Llamamos al servicio que buscará por artista
+        contenidos = self.servicio.buscar_contenido(artista)
+
+        # Filtrar los contenidos eliminados dentro del servicio para cumplir con la arquitectura hexagonal
+        contenidos_no_eliminados = [contenido for contenido in contenidos if not contenido.eliminado]
+
+        if not contenidos_no_eliminados:
+            return Response({"mensaje": "No se encontraron contenidos para este artista."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Serializamos los contenidos
+        serializer = ContenidoSerializer(contenidos_no_eliminados, many=True)
+        return Response(serializer.data)
+
 class RegistrarBusquedaView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -332,7 +361,7 @@ class ActualizarContenidoView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-from rest_framework.permissions import IsAuthenticated
+
 
 class EliminarContenidoView(APIView):
     permission_classes = [IsAuthenticated]
@@ -385,7 +414,7 @@ class ContenidosPorEtiquetasFavoritasView(APIView):
         repo_etiquetas_fav = UsuarioEtiquetaFavoritaRepositorioImpl()
         repo_contenidos = ContenidoRepositorioImpl()
         repo_etiquetas = EtiquetaRepositorioImpl()
-        repo_relaciones = ContenidoEtiquetaRepositorioImpl()  # Este es el repo de TagWant
+        repo_relaciones = ContenidoEtiquetaRepositorioImpl()
 
         contenido_servicio = ContenidoServicio(repo_contenidos, repo_etiquetas, repo_relaciones)
 
@@ -399,6 +428,9 @@ class ContenidosPorEtiquetasFavoritasView(APIView):
 
         # Filtrar los contenidos eliminados
         contenidos_no_eliminados = [contenido for contenido in contenidos_filtrados if not contenido.eliminado]
+
+        if not contenidos_no_eliminados:
+            return Response({"mensaje": "No hay contenidos para tus etiquetas favoritas."}, status=200)
 
         serializer = ContenidoSerializer(contenidos_no_eliminados, many=True)
         return Response(serializer.data)

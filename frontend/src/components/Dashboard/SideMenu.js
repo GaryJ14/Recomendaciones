@@ -1,4 +1,4 @@
-import * as React from 'react';
+import * as React from 'react'; 
 import { styled } from '@mui/material/styles';
 import Avatar from '@mui/material/Avatar';
 import MuiDrawer, { drawerClasses } from '@mui/material/Drawer';
@@ -8,7 +8,6 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import SelectContent from './SelectContent';
 import MenuContent from './MenuContent';
-import CardAlert from './CardAlert';
 import OptionsMenu from './OptionsMenu';
 
 const drawerWidth = 240;
@@ -25,13 +24,10 @@ const Drawer = styled(MuiDrawer)({
 });
 
 export default function SideMenu() {
-  // Obtener el nombre y el email del usuario desde localStorage
+  // Obtener el nombre, email y foto del usuario desde localStorage
   const nombre = localStorage.getItem('nombre') || 'Invitado';
-  const email = localStorage.getItem('email') || 'email@default.com'; // Asumiendo que también tienes el email en localStorage
-
-  // Verificación para asegurarse de que email y nombre están correctamente obtenidos
-  console.log('Nombre:', nombre);
-  console.log('Email:', email);
+  const email = localStorage.getItem('email') || 'email@default.com';
+  
 
   return (
     <Drawer
@@ -43,49 +39,25 @@ export default function SideMenu() {
         },
       }}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          mt: 'calc(var(--template-frame-height, 0px) + 4px)',
-          p: 1.5,
-        }}
-      >
+      <Box sx={{ display: 'flex', mt: 'calc(var(--template-frame-height, 0px) + 4px)', p: 1.5 }}>
         <SelectContent />
       </Box>
       <Divider />
-      <Box
-        sx={{
-          overflow: 'auto',
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
+      <Box sx={{ overflow: 'auto', height: '100%', display: 'flex', flexDirection: 'column' }}>
         <MenuContent />
-        <CardAlert />
       </Box>
-      <Stack
-        direction="row"
-        sx={{
-          p: 2,
-          gap: 1,
-          alignItems: 'center',
-          borderTop: '1px solid',
-          borderColor: 'divider',
-        }}
-      >
+      <Stack direction="row" sx={{ p: 2, gap: 1, alignItems: 'center', borderTop: '1px solid', borderColor: 'divider' }}>
         <Avatar
           sizes="small"
           alt={nombre}
-          src="/static/images/avatar/7.jpg"
           sx={{ width: 36, height: 36 }}
         />
         <Box sx={{ mr: 'auto' }}>
           <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: '16px' }}>
-            {nombre}  {/* Aquí se muestra el nombre del usuario */}
+            {nombre} {/* Mostrar el nombre del usuario */}
           </Typography>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            {email}  {/* Aquí se muestra el correo del usuario */}
+            {email} {/* Mostrar el correo del usuario */}
           </Typography>
         </Box>
         <OptionsMenu />

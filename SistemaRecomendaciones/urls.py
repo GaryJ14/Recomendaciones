@@ -22,12 +22,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('Backend.WantMusic.infraestructura.urls')),
     path('api/', include('Backend.TagWant.infraestructura.urls')),
-    # Add paths for other apps when they're ready
     # path('api/administrator/', include('Backend.AdministratorWant.infraestructura.urls')),
     # path('api/tag/', include('Backend.TagWant.infraestructura.urls')),
     # path('api/wantadmin/', include('Backend.WantAdministrator.infraestructura.urls')),
 ]
 
-# Add this to serve media files during development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

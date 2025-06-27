@@ -9,7 +9,7 @@ from Backend.TagWant.infraestructura.serializers import EtiquetaSerializer
 class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
-        fields = ['id', 'nombre', 'email','password', 'is_active', 'is_staff', 'creado_en']
+        fields = ['id', 'nombre', 'email','password', 'is_active', 'is_staff', 'creado_en', 'foto_perfil']
         read_only_fields = ['id', 'is_active', 'is_staff', 'creado_en']
         
 
@@ -17,13 +17,16 @@ class RegistroSerializer(serializers.Serializer):
     nombre = serializers.CharField(max_length=100)
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
+    foto_perfil = serializers.ImageField(required=False,allow_null=True)
 
     def create(self, validated_data):
-        # Crear el usuario con la contraseña cifrada
+        foto_perfil = validated_data.get('foto_perfil', None)
+        # Llama al servicio que utiliza el repositorio para crear el usuario
         usuario = Usuario.objects.create_user(
-            email=validated_data['email'], 
-            nombre=validated_data['nombre'],  # Asegúrate de que 'nombre' esté presente en el modelo Usuario
-            password=validated_data['password'],  # Asegúrate de que la contraseña se cifre correctamente
+            email=validated_data['email'],
+            nombre=validated_data['nombre'],
+            password=validated_data['password'],
+            foto_perfil=foto_perfil
         )
         return usuario
 
@@ -31,6 +34,7 @@ class ActualizarUsuarioSerializer(serializers.Serializer):
     nombre = serializers.CharField(max_length=100)
     email = serializers.EmailField()
     password = serializers.CharField(max_length=128, required=False, allow_blank=True)
+    foto_perfil = serializers.ImageField(required=False, allow_null=True) 
     is_active = serializers.BooleanField()
 
 class eliminarUsuarioSerializer(serializers.Serializer):
@@ -49,14 +53,13 @@ class ContenidoSerializer(serializers.ModelSerializer):
     subido_por_nombre = serializers.CharField(source='subido_por.nombre', read_only=True)
     motivo_eliminacion = serializers.CharField(read_only=True)
     fecha_eliminacion = serializers.DateTimeField(read_only=True)
+    artista = serializers.CharField(read_only=True)  # Eliminar el source='artista'
 
     class Meta:
         model = Contenido
-        fields = ['id', 'titulo', 'tipo', 'url', 'fecha_subida', 'subido_por_nombre', 'etiquetas', 'eliminado', 'motivo_eliminacion', 'fecha_eliminacion']
-
+        fields = ['id', 'titulo', 'tipo', 'url', 'fecha_subida', 'subido_por_nombre', 'artista', 'etiquetas', 'eliminado', 'motivo_eliminacion', 'fecha_eliminacion']
 
     def get_etiquetas(self, obj):
-        # Usar el repositorio de relaciones para traer las etiquetas relacionadas
         etiqueta_repo = EtiquetaRepositorioImpl()
         relacion_repo = ContenidoEtiquetaRepositorioImpl()
         etiquetas = relacion_repo.obtener_etiquetas_por_contenido(obj.id)
@@ -72,6 +75,7 @@ class CrearContenidoSerializer(serializers.Serializer):
         required=False
     )
     archivo = serializers.FileField(required=True)
+    artista = serializers.CharField(max_length=255, required=False)
     
 class ActualizarContenidoSerializer(serializers.Serializer):
     titulo = serializers.CharField(max_length=255, required=False)
@@ -81,6 +85,7 @@ class ActualizarContenidoSerializer(serializers.Serializer):
         required=False
     )
     archivo = serializers.FileField(required=False)
+    artista = serializers.CharField(max_length=255, required=False)
 
     def validate(self, data):
         # Si el archivo está presente, validar su formato
@@ -100,6 +105,7 @@ class ContenidoEliminadoSerializer(serializers.Serializer):
     titulo = serializers.CharField()
     tipo = serializers.CharField()
     url = serializers.CharField()
+    artista = serializers.CharField()
     fecha_subida = serializers.DateTimeField(allow_null=True)
     etiquetas = serializers.ListField()
     eliminado = serializers.BooleanField()

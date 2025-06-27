@@ -18,6 +18,7 @@ export default function TblContenido() {
   const [etiquetas, setEtiquetas] = useState('');
   const [titulo, setTitulo] = useState('');
   const [tipo, setTipo] = useState('');
+  const [artista, setArtista] = useState('');
   const [archivo, setArchivo] = useState(null);
 
   const fileInputRef = useRef(null);
@@ -132,10 +133,15 @@ export default function TblContenido() {
       showNotification('El tipo de contenido es obligatorio', 'error');
       return;
     }
+    if (!artista.trim()) {
+      showNotification('El artista es obligatorio', 'error');
+      return;
+    }
 
     const formData = new FormData();
     formData.append('titulo', titulo.trim());
     formData.append('tipo', tipo);
+    formData.append('artista', artista.trim());  // Asegúrate de enviar el campo 'artista'
 
     const etiquetasArray = etiquetas
       .split(',')
@@ -176,6 +182,7 @@ export default function TblContenido() {
       // Limpiar estados luego de subir
       setTitulo('');
       setTipo('');
+      setArtista('');  // Limpiar el campo artista después de la carga
       setEtiquetas('');
       setArchivo(null);
       setArchivos([]);
@@ -232,6 +239,15 @@ export default function TblContenido() {
         value={etiquetas}
         onChange={(e) => setEtiquetas(e.target.value)}
         sx={{ mb: 2 }}
+      />
+
+      <TextField
+        fullWidth
+        label="Artista"
+        value={artista}
+        onChange={(e) => setArtista(e.target.value)}  // Para el campo artista
+        sx={{ mb: 2 }}
+        required
       />
 
       <Paper

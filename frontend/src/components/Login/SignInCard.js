@@ -48,6 +48,7 @@ export default function SignInCard() {
     setOpen(false);
   };
 
+  // Login Component (Asegúrate de que el ID se guarda en localStorage)
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -56,36 +57,39 @@ export default function SignInCard() {
     try {
       const data = await login(email, password); // Llamada al servicio login
 
-      // Almacenar el token JWT en localStorage
-      localStorage.setItem("access_token", data.access_token); // Almacenar el token
-      localStorage.setItem("nombre", data.nombre); // Almacenar el nombre del usuario
-      localStorage.setItem("email", data.email); // Almacenar el correo electrónico
+      // Almacenar el token JWT y el ID en localStorage
+      localStorage.setItem("access_token", data.access_token);  // Token de acceso
+      localStorage.setItem("user_id", data.id);  // Almacena el ID
+      localStorage.setItem("nombre", data.nombre); // Nombre
+      localStorage.setItem("email", data.email); // Email
+      localStorage.setItem("foto_perfil", data.foto_perfil); // Foto de perfil
 
       Swal.fire({
         title: "Bienvenido!",
-        text: data.mensaje,
+        text: data.message,
         icon: "success",
         confirmButtonText: "Ok",
       });
 
       // Redirigir según el rol del usuario
       if (data.role === "superadmin") {
-        window.location.href = "/Dashboard"; // Redirigir a Dashboard para superadmin
+        window.location.href = "/Dashboard";
       } else if (data.role === "admin") {
-        window.location.href = "/Dashboard"; // Redirigir a Dashboard para admin
+        window.location.href = "/Dashboard";
       } else {
-        window.location.href = "/Home"; // Redirigir a la página principal para usuario normal
+        window.location.href = "/Home";
       }
     } catch (error) {
       Swal.fire({
         title: "Error!",
-        text:
-          error.message || "Hubo un error en el servidor. Intenta más tarde.",
+        text: error.message || "Hubo un error en el servidor. Intenta más tarde.",
         icon: "error",
         confirmButtonText: "Aceptar",
       });
     }
   };
+
+
 
   const validateInputs = () => {
     let isValid = true;

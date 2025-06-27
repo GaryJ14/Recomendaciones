@@ -36,15 +36,19 @@ class WantMusicServicio:
 
 #------------------ ---------------- USUARIO  -------------------------------
 
-    def registrar_usuario(self, nombre, email, password):
-        existente = self.usuario_repo.obtener_por_email(email)
-        if existente:
-            raise Exception("El usuario ya existe")
+    def registrar_usuario(self, nombre, email, password, foto_perfil=None):
+        # Aquí creamos un usuario con el campo foto_perfil
+        usuario_dominio = Usuario(
+            id=None,
+            nombre=nombre,
+            email=email,
+            password=password,
+            foto_perfil=foto_perfil  # Foto de perfil incluida
+        )
         
-        nuevo_usuario = Usuario(None, nombre, email, password)
-        usuario_guardado = self.usuario_repo.guardar(nuevo_usuario)
-        return usuario_guardado  # debe retornar la instancia del modelo Django, no un objeto dominio
-
+        # Guardar el usuario en el repositorio (esto lo mapea al modelo de Django)
+        usuario_guardado = self.usuario_repo.guardar(usuario_dominio)
+        return usuario_guardado
 
  
     def autenticar_usuario(self, email, password):
@@ -64,7 +68,7 @@ class WantMusicServicio:
         if not usuario:
             raise Exception("Usuario no encontrado")
         self.usuario_repo.eliminar(id)
-    def actualizar_usuario(self, id, nombre, email, password, is_active):
+    def actualizar_usuario(self, id, nombre, email, password, is_active, foto_perfil=None):
         usuario = self.usuario_repo.obtener_por_id(id)
         if not usuario:
             raise Exception("Usuario no encontrado")
@@ -72,6 +76,7 @@ class WantMusicServicio:
         usuario.nombre = nombre
         usuario.email = email
         usuario.password = password
+        usuario.foto_perfil
         usuario.is_active = is_active
 
         return self.usuario_repo.actualizar(usuario)
@@ -112,12 +117,14 @@ class ContenidoServicio:
         self.servicio_adm = ContenidoEliminadoServicio(self.repo_adm)
 
     def crear_contenido_con_etiquetas(self, datos, archivo):
+        # Asegúrate de que el campo 'artista' se pase y se asigne correctamente
         contenido_dominio = Contenido(
             id=None,
             titulo=datos['titulo'],
             tipo=datos['tipo'],
             url='',
-            subido_por=datos['subido_por']
+            subido_por=datos['subido_por'],
+            artista=datos.get('artista', ''),   # Asigna el artista aquí
         )
 
         contenido_guardado = self.contenido_repo.guardar(contenido_dominio, archivo)
@@ -148,6 +155,8 @@ class ContenidoServicio:
             contenido.titulo = datos['titulo']
         if 'tipo' in datos:
             contenido.tipo = datos['tipo']
+        if 'artista' in datos:
+            contenido.artista = datos['artista']
 
         # Si hay archivo nuevo, guardar y actualizar URL
         if archivo:
@@ -174,12 +183,16 @@ class ContenidoServicio:
                 self.repositorio_relacion.crear_relacion(contenido.id, etiqueta.id)
 
         return contenido
+    from django.db.models import Q
+
     def buscar_contenido(self, query: str):
-        # Filtrar el contenido por título o etiquetas
+        # Filtrar el contenido por título, etiquetas o artista
         return ContenidoModel.objects.filter(
-            Q(titulo__icontains=query) |
-            Q(contenido_etiquetas__etiqueta__nombre__icontains=query)
-        ).distinct() 
+            Q(titulo__icontains=query) |  # Buscar por título
+            Q(contenido_etiquetas__etiqueta__nombre__icontains=query) |  # Buscar por etiquetas
+            Q(artista__icontains=query)  # Buscar por artista
+        ).distinct()
+
     def eliminar_contenido(self, contenido_id: int, usuario_eliminador, motivo: str = None):
         contenido = self.contenido_repo.obtener_por_id(contenido_id)
         if not contenido:

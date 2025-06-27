@@ -23,7 +23,18 @@ export const obtenerUsuarios = () => {
     headers: getAuthHeaders(),  // Incluir los headers en la solicitud
   });
 };
-
+export const obtenerUsuario = async (token) => {
+  try {
+    const response = await axios.get("http://localhost:8000/api/perfil/", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error("No se pudo obtener los datos del usuario");
+  }
+};
 export const crearUsuario = (usuario) => {
   return axios.post(`${API_BASE}/registro/`, usuario, {
     headers: getAuthHeaders(),  // Incluir los headers en la solicitud

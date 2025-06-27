@@ -5,13 +5,13 @@ import { Link } from 'react-router-dom';  // Importamos Link para redirigir
 const Sidebar = () => {
   return (
     <div style={styles.sidebar}>
-      <h1 style={styles.logo}>Spotify</h1>
+      <h1 style={styles.logo}>SoundMusicUTC</h1>
       <ul style={styles.navList}>
         <SidebarItem icon={<FaHome />} text="Home" to="/Home" />
         <SidebarItem icon={<FaSearch />} text="Search" to="/BusquedaPage" />  {/* Redirige a /busqueda */}
-        <SidebarItem icon={<FaBook />} text="Tu Historial" to="/HistorialPage"  />
+        <SidebarItem icon={<FaBook />} text="Tu Historial" to="/HistorialPage" />
         <SidebarItem icon={<FaPlus />} text="Create Playlist" />
-        <SidebarItem icon={<FaHeart />} text="Liked Songs"  to="/FavoritosPage" />
+        <SidebarItem icon={<FaHeart />} text="Liked Songs" to="/FavoritosPage" />
         <SidebarItem icon={<FaDownload />} text="Downloaded" />
       </ul>
     </div>
@@ -30,13 +30,13 @@ const SidebarItem = ({ icon, text, active, to }) => (
 const styles = {
   sidebar: {
     width: '220px',
-    backgroundColor: '#000',
-    color: '#b3b3b3',
     height: '100vh',
     padding: '20px 0 20px 20px',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'flex-start',
+    backgroundImage: 'radial-gradient(at 50% 50%, hsla(210, 100%, 16%, 0.5), hsl(220, 30%, 5%))', // Fondo actualizado
+    color: '#b3b3b3',
   },
   logo: {
     color: '#1DB954',

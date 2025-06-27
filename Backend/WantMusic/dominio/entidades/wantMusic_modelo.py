@@ -1,22 +1,24 @@
 #Aquí se define la entidad de dominio, independiente de Django. INICIO
+    
 class Usuario:
-    def __init__(self, id, nombre, email, password, is_active=True, is_staff=False, is_superuser=False):
+    def __init__(self, id, nombre, email, password, foto_perfil=None, is_active=True, is_staff=False, is_superuser=False):
         self.id = id
         self.nombre = nombre
         self.email = email
         self.password = password
+        self.foto_perfil = foto_perfil  # Campo foto_perfil agregado
         self.is_active = is_active
         self.is_staff = is_staff
         self.is_superuser = is_superuser
 
     def verificar_password(self, password):
-        # El hash se queda en la infraestructura
+        """Método para verificar la contraseña"""
         return self.password == password
 
 class Contenido:
     """Entidad de dominio para contenido multimedia."""
     
-    def __init__(self,id=None,titulo="",tipo="", url="",etiquetas="",fecha_subida=None,subido_por=None,
+    def __init__(self,id=None,titulo="",tipo="", url="",etiquetas="",fecha_subida=None,subido_por=None, artista="",
         eliminado=False,fecha_eliminacion=None,motivo_eliminacion=None):
         self.id = id
         self.titulo = titulo
@@ -25,6 +27,7 @@ class Contenido:
         self.etiquetas = etiquetas
         self.fecha_subida = fecha_subida
         self.subido_por = subido_por
+        self.artista = artista 
         self.eliminado = eliminado
         self.motivo_eliminacion = motivo_eliminacion
         self.fecha_eliminacion = fecha_eliminacion

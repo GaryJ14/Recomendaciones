@@ -26,80 +26,81 @@ from Backend.WantMusic.infraestructura.models import HistorialReproduccion as Hi
 from Backend.WantMusic.dominio.entidades.wantMusic_modelo import HistorialReproduccion as HistorialReproduccionEntidad
 
 from django.contrib.auth.hashers import make_password
-class UsuarioRepositorioORM(UsuarioRepositorio):
+
+class UsuarioRepositorioORM:
     def obtener_por_email(self, email: str):
         try:
             user = UsuarioModel.objects.get(email=email)
             return UsuarioDominio(
-                user.id, 
-                user.nombre, 
-                user.email, 
-                user.password, 
-                user.is_active, 
-                user.is_staff, 
-                user.is_superuser  
+                id=user.id, 
+                nombre=user.nombre, 
+                email=user.email, 
+                password=user.password, 
+                foto_perfil=user.foto_perfil.url if user.foto_perfil else None,  # Agregar foto_perfil
+                is_active=user.is_active, 
+                is_staff=user.is_staff, 
+                is_superuser=user.is_superuser  
             )
         except UsuarioModel.DoesNotExist:
             return None
 
     def guardar(self, usuario: UsuarioDominio):
+        # Mapeamos la entidad dominio Usuario a un modelo de Django
         user = UsuarioModel(
             id=usuario.id,
             nombre=usuario.nombre,
             email=usuario.email,
             is_active=usuario.is_active,
             is_staff=usuario.is_staff,
-            is_superuser=usuario.is_superuser 
+            is_superuser=usuario.is_superuser,
+            foto_perfil=usuario.foto_perfil  # Agregar foto_perfil
         )
         user.set_password(usuario.password)
         user.save()
         return user
-    def obtener_por_id(self, id: int):
+
+    def obtener_por_id(self, id: int) -> Optional[Usuario]:
         try:
-            user = UsuarioModel.objects.get(id=id)
-            return UsuarioDominio(
-                id=user.id,
-                nombre=user.nombre,
-                email=user.email,
-                password=user.password,
-                is_active=user.is_active,
-                is_staff=user.is_staff,
-                is_superuser=user.is_superuser
+            modelo = UsuarioModel.objects.get(id=id)
+            return Usuario(
+                id=modelo.id,
+                nombre=modelo.nombre,
+                email=modelo.email,
+                password=modelo.password,
+                foto_perfil=modelo.foto_perfil
             )
         except UsuarioModel.DoesNotExist:
             return None
-    def obtener_todos(self):
+
+    def obtener_todos(self) -> List[Usuario]:
         usuarios = UsuarioModel.objects.all()
-        return [
-            UsuarioDominio(
-                user.id, 
-                user.nombre, 
-                user.email, 
-                user.password, 
-                user.is_active, 
-                user.is_staff, 
-                user.is_superuser  
-            ) for user in usuarios
-        ]
-    def eliminar(self, id: int):
+        return [Usuario(
+            id=modelo.id,
+            nombre=modelo.nombre,
+            email=modelo.email,
+            password=modelo.password,
+            foto_perfil=modelo.foto_perfil
+        ) for modelo in usuarios]
+
+    def eliminar(self, id: int) -> None:
         try:
-            user = UsuarioModel.objects.get(id=id)
-            user.delete()
+            usuario = UsuarioModel.objects.get(id=id)
+            usuario.delete()
         except UsuarioModel.DoesNotExist:
             raise Exception("Usuario no encontrado")
-    def actualizar(self, usuario_dominio: UsuarioDominio):
-        user = UsuarioModel.objects.get(id=usuario_dominio.id)
-        user.nombre = usuario_dominio.nombre
-        user.email = usuario_dominio.email
-        user.is_active = usuario_dominio.is_active
 
-        # Solo actualizar contraseña si viene
-        if usuario_dominio.password:
-            if not usuario_dominio.password.startswith("pbkdf2_"):
-                user.set_password(usuario_dominio.password)
-
-        user.save()
-        return usuario_dominio
+    def actualizar(self, usuario: Usuario) -> Usuario:
+        try:
+            modelo = UsuarioModel.objects.get(id=usuario.id)
+            modelo.nombre = usuario.nombre
+            modelo.email = usuario.email
+            if usuario.password:
+                modelo.set_password(usuario.password)  # Solo actualizar si hay nueva contraseña
+            modelo.foto_perfil = usuario.foto_perfil
+            modelo.save()
+            return usuario
+        except UsuarioModel.DoesNotExist:
+            raise Exception("Usuario no encontrado")
 
 
 class ContenidoRepositorioImpl:
@@ -112,7 +113,7 @@ class ContenidoRepositorioImpl:
         ruta_carpeta = os.path.join(settings.MEDIA_ROOT, tipo, subcarpeta)
         os.makedirs(ruta_carpeta, exist_ok=True)
 
-        nombre_archivo = f"{uuid.uuid4()}_{archivo.name}"
+        nombre_archivo = archivo.name
         ruta_completa = os.path.join(ruta_carpeta, nombre_archivo)
 
         # Guardar archivo solo si no existe
@@ -137,7 +138,8 @@ class ContenidoRepositorioImpl:
             contenido_model.tipo = contenido.tipo
             contenido_model.url = url_archivo
             contenido_model.subido_por_id = contenido.subido_por.id if contenido.subido_por else None
-            
+            contenido_model.artista = contenido.artista
+
             # NUEVOS CAMPOS para eliminación lógica:
             if hasattr(contenido, 'eliminado'):
                 contenido_model.eliminado = contenido.eliminado
@@ -153,7 +155,7 @@ class ContenidoRepositorioImpl:
                 tipo=contenido.tipo,
                 url=url_archivo,
                 subido_por_id=contenido.subido_por.id if contenido.subido_por else None,
-                # si quieres, aquí puedes incluir eliminado=False por defecto
+                artista=contenido.artista
             )
         return self._mapear_a_entidad(contenido_model)
 
@@ -168,8 +170,6 @@ class ContenidoRepositorioImpl:
         except ContenidoModel.DoesNotExist:
             raise Exception("Contenido no encontrado")
         
-
-
 
     def obtener_por_id(self, contenido_id: int):
         try:
@@ -188,9 +188,7 @@ class ContenidoRepositorioImpl:
         modelos = ContenidoModel.objects.filter(tipo=tipo).order_by('-fecha_subida')
         return [self._mapear_a_entidad(modelo) for modelo in modelos]
 #Buscador de contenidos por nombres
-    def buscar_por_titulo_o_etiqueta(self, query: str):
-        return ContenidoModel.objects.filter(titulo__icontains=query)
-    
+
     def listar_eliminados(self):
         eliminados = ContenidoEliminadoModel.objects.select_related('contenido').all().order_by('-fecha_eliminacion')
         resultados = []
@@ -211,6 +209,7 @@ class ContenidoRepositorioImpl:
             titulo=contenido.titulo,
             tipo=contenido.tipo,
             url=contenido.url,
+            artista=contenido.artista,
             eliminado=True,
             # Otros campos...
             # Puedes agregar motivo y fecha de eliminado extraídos de eliminado_model
@@ -227,6 +226,7 @@ class ContenidoRepositorioImpl:
             titulo=modelo.titulo,
             tipo=modelo.tipo,
             url=modelo.url,
+            artista=modelo.artista,
             subido_por=UsuarioDominio(
                 id=modelo.subido_por.id,
                 nombre=modelo.subido_por.nombre,
@@ -251,7 +251,7 @@ class ContenidoRepositorioImpl:
             contenido_etiquetas__etiqueta_id__in=etiquetas_ids,
             eliminado=False
         )
-    def buscar_por_titulo_o_etiqueta(self, query: str):
+    def buscar_por_titulo_o_etiqueta_o_artista(self, query: str):
         """
         Buscar contenidos por título o por etiquetas.
         """
@@ -260,9 +260,12 @@ class ContenidoRepositorioImpl:
 
         # Buscar por etiquetas utilizando la relación Many-to-Many
         contenidos_por_etiquetas = ContenidoModel.objects.filter(etiquetas__nombre__icontains=query)
+        
+        contenidos_por_artista = ContenidoModel.objects.filter(artista__icontains=query)
+        
 
         # Combina ambos resultados y elimina duplicados
-        contenidos = contenidos_por_titulo | contenidos_por_etiquetas
+        contenidos = contenidos_por_titulo | contenidos_por_etiquetas | contenidos_por_artista
         return contenidos.distinct()
 
 class UsuarioEtiquetaFavoritaRepositorioImpl(UsuarioEtiquetaFavoritaRepositorio):

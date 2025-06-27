@@ -66,7 +66,19 @@ export const buscarContenido = async (query) => {
 
   return response.data;
 };
+export const buscarContenidoPorArtista = async (query) => {
+  const token = obtenerToken();
+  if (!token) throw new Error('No estás autenticado.');
 
+  const response = await axios.get(`${API_URL}buscar-artista/${query}/`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+    },
+  });
+
+  return response.data;
+};
 // Eliminar contenido
 export const eliminarContenido = async (id, motivo = '') => {
   const ELIMINAR_API_URL = `http://localhost:8000/api/contenidos/eliminar/${id}/`;
@@ -108,6 +120,22 @@ export const actualizarContenido = async (id, datos) => {
 
   return response.data;
 };
+
+export const ObtenerEliminados = async (datos) => {
+  const API_ObtEliminados_URL = 'http://localhost:8000/api/contenidos/eliminados/';
+  const token = obtenerToken();
+  if (!token) throw new Error('No estás autenticado.');
+
+  const response = await axios.get(API_ObtEliminados_URL, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/json',
+    },
+  });
+
+  return response.data;
+};
+  
 
 // Función para obtener los contenidos favoritos del usuario
 export const obtenerFavoritos = async () => {

@@ -36,6 +36,7 @@ export default function TblMusica() {
   const [contenidoEditar, setContenidoEditar] = useState(null);
   const [tituloEditar, setTituloEditar] = useState('');
   const [tipoEditar, setTipoEditar] = useState('');
+  const [artistaEditar, setArtistaEditar] = useState('');
   const [etiquetasEditar, setEtiquetasEditar] = useState('');
 
   const cargarContenidos = useCallback(async () => {
@@ -87,36 +88,33 @@ export default function TblMusica() {
     }
   };
 
+  const abrirEditar = async (contenido) => {
+    // Primero confirmamos si quiere editar
+    const result = await Swal.fire({
+      title: '¿Deseas editar este contenido?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, editar',
+      cancelButtonText: 'Cancelar',
+    });
 
-const abrirEditar = async (contenido) => {
-  // Primero confirmamos si quiere editar
-  const result = await Swal.fire({
-    title: '¿Deseas editar este contenido?',
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonText: 'Sí, editar',
-    cancelButtonText: 'Cancelar',
-  });
-
-  if (result.isConfirmed) {
-    // Si confirma, abrimos el modal con los datos cargados
-    setContenidoEditar(contenido);
-    setTituloEditar(contenido.titulo || '');
-    setTipoEditar(contenido.tipo || '');
-    setEtiquetasEditar(
-      contenido.etiquetas?.map(e => e.nombre).join(', ') || ''
-    );
-    setOpenEditar(true);
-  }
-};
-
-
+    if (result.isConfirmed) {
+      // Si confirma, abrimos el modal con los datos cargados
+      setContenidoEditar(contenido);
+      setTituloEditar(contenido.titulo || '');
+      setTipoEditar(contenido.tipo || '');
+      setArtistaEditar(contenido.artista || '');  // Cargar el artista
+      setEtiquetasEditar(contenido.etiquetas?.map(e => e.nombre).join(', ') || '');
+      setOpenEditar(true);
+    }
+  };
 
   const cerrarEditar = () => {
     setOpenEditar(false);
     setContenidoEditar(null);
     setTituloEditar('');
     setTipoEditar('');
+    setArtistaEditar('');
     setEtiquetasEditar('');
   };
 
@@ -151,6 +149,7 @@ const abrirEditar = async (contenido) => {
       await actualizarContenido(contenidoEditar.id, {
         titulo: tituloEditar.trim(),
         tipo: tipoEditar,
+        artista: artistaEditar.trim(),  // Incluir el campo artista
         etiquetas: etiquetasArray
       });
       Swal.fire('Guardado', 'Contenido actualizado exitosamente.', 'success');
@@ -173,6 +172,16 @@ const abrirEditar = async (contenido) => {
         sx={{ mr: 0.5, mb: 0.5 }}
       />
     ));
+  };
+
+  const renderArtista = (artista) => {
+    if (!artista) return null;  // No hace falta iterar si solo es un valor
+
+    return (
+      <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
+        Artista: {artista}
+      </Typography>
+    );
   };
 
   const renderContenidoMedia = (contenido) => {
@@ -274,6 +283,7 @@ const abrirEditar = async (contenido) => {
                 />
                 <CardContent sx={{ flexGrow: 1 }}>
                   <Box mb={1}>{renderEtiquetas(contenido.etiquetas)}</Box>
+                  {renderArtista(contenido.artista)}  {/* Mostrar el artista */}
                   {renderContenidoMedia(contenido)}
                 </CardContent>
                 <CardActions sx={{ justifyContent: 'space-between' }}>
@@ -329,11 +339,20 @@ const abrirEditar = async (contenido) => {
             <option value="video">Video</option>
           </TextField>
           <TextField
+            
             label="Etiquetas (separadas por coma)"
             fullWidth
             value={etiquetasEditar}
             onChange={(e) => setEtiquetasEditar(e.target.value)}
             helperText="Separe las etiquetas con comas"
+          />
+          &nbsp;
+          <TextField
+            label="Artista"
+            fullWidth
+            value={artistaEditar}
+            onChange={(e) => setArtistaEditar(e.target.value)}  // Actualiza el estado del artista
+            helperText="El nombre del artista"
           />
         </DialogContent>
         <DialogActions>

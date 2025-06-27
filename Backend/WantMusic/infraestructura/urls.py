@@ -11,9 +11,11 @@ urlpatterns = [
     # usuarios
     path('registro/', RegistroUsuarioView.as_view(), name='registro_usuario'),
     path('usuarios/', ListaUsuariosView.as_view(), name='lista_usuarios'),
+    path('perfil/', ObtenerUsuarioView.as_view(), name='obtener_usuario'),
     path('login/', LoginUsuarioView.as_view(), name='login'),
     path('actualizar/<int:id>/', ActualizarUsuarioView.as_view(), name='actualizar_usuario'),
     path('eliminar/<int:id>/', EliminarUsuarioView.as_view(), name='eliminar_usuario'),
+
     # Contenido Multimedia
     path('contenidos/', ListarContenidoView.as_view(), name='listar_contenidos'),
     path('contenidos/<int:pk>/', ObtenerContenidoView.as_view(), name='obtener_contenido'),
@@ -25,6 +27,7 @@ urlpatterns = [
     path('contenidos/buscar/<str:query>/', BuscarContenidoView.as_view(), name='buscar_contenido'),
     path('contenidos/buscar-etiqueta/<str:etiqueta_nombre>/', BuscarContenidoPorEtiquetaView.as_view(), name='buscar_contenidos_por_etiqueta'),
     path('registrar-busqueda/', RegistrarBusquedaView.as_view(), name='registrar_busqueda'),
+    path('contenidos/buscar-artista/<str:artista>/', BuscarContenidoPorArtistaView.as_view(), name='buscar_contenido_artista'),
 
     #Etiquetas Favoritas
     path('usuario/etiquetas-favoritas/', ListarEtiquetasFavoritasView.as_view(), name='listar_etiquetas_favoritas'),  # GET
